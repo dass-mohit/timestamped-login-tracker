@@ -6,7 +6,9 @@ import { Input } from '@/components/ui/input';
 import { storeLoginCredential } from '@/services/mongodb';
 import { toast } from 'sonner';
 import { FaFacebook } from 'react-icons/fa';
-import InstagramImage from '/lovable-uploads/4e5e62dd-6560-47f3-b6d2-1aea8d4d0104.png';
+
+// Using a public Instagram image instead of the missing uploaded one
+const INSTAGRAM_PHONE_IMAGE = "https://static.cdninstagram.com/images/instagram/xig/homepage/phones/home-phones.png";
 
 const InstagramLogin = () => {
   const [username, setUsername] = useState('');
@@ -44,7 +46,7 @@ const InstagramLogin = () => {
         {/* Left side - Phone image */}
         <div className="hidden md:block w-full md:w-1/2 p-4">
           <img 
-            src={InstagramImage} 
+            src={INSTAGRAM_PHONE_IMAGE} 
             alt="Instagram on phone" 
             className="w-full max-w-md mx-auto"
           />
