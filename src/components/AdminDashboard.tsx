@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -107,10 +108,10 @@ const AdminDashboard = () => {
             you should implement proper security measures.
           </p>
           <p>
-            The MongoDB connection uses a placeholder URL. In a real application, you would need to:
+            The credentials are stored in browser localStorage. In a real application, you would need to:
           </p>
           <ul className="list-disc list-inside mt-2 space-y-1 text-gray-300">
-            <li>Set up a proper MongoDB instance</li>
+            <li>Set up a proper MongoDB instance on a secure server</li>
             <li>Use environment variables for the connection string</li>
             <li>Implement proper authentication and authorization</li>
             <li>Set up secure API endpoints for data fetching</li>

