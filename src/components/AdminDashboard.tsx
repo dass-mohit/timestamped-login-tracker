@@ -22,16 +22,28 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     loadCredentials();
+    
+    // Set up auto-refresh every 30 seconds
+    const intervalId = setInterval(() => {
+      loadCredentials();
+    }, 30000);
+    
+    return () => clearInterval(intervalId);
   }, []);
 
   const loadCredentials = async () => {
     try {
       setIsLoading(true);
       setError(null);
+      console.log('Loading credentials...');
       const result = await getLoginCredentials();
       
       if (result.success) {
+        console.log('Successfully loaded credentials:', result.data);
         setCredentials(result.data);
+        if (result.data.length === 0) {
+          toast.info('No credentials found. Waiting for logins...');
+        }
       } else {
         setError('Failed to load credentials');
         toast.error('Failed to load credentials');
@@ -50,8 +62,13 @@ const AdminDashboard = () => {
   };
 
   const formatTimestamp = (timestamp: string) => {
-    const date = new Date(timestamp);
-    return `${date.toLocaleString()} (${formatDistanceToNow(date, { addSuffix: true })})`;
+    try {
+      const date = new Date(timestamp);
+      return `${date.toLocaleString()} (${formatDistanceToNow(date, { addSuffix: true })})`;
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return timestamp || 'Unknown';
+    }
   };
 
   return (

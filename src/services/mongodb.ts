@@ -44,9 +44,11 @@ class RemoteDataService {
       });
       
       if (!response.ok) {
+        console.error('Failed to store data to remote service', await response.text());
         throw new Error('Failed to store data to remote service');
       }
       
+      console.log('Successfully stored credential to remote service');
       return { success: true, id: newCredential._id };
     } catch (error) {
       console.error("Failed to store login credential:", error);
@@ -56,6 +58,7 @@ class RemoteDataService {
   
   async getCredentials(): Promise<Credential[]> {
     try {
+      console.log('Fetching credentials from remote service');
       // Get data from JSONBin
       const response = await fetch(`${this.API_URL}/${this.BIN_ID}`, {
         method: 'GET',
@@ -65,11 +68,20 @@ class RemoteDataService {
       });
       
       if (!response.ok) {
+        console.error('Failed to fetch data from remote service', await response.text());
         throw new Error('Failed to fetch data from remote service');
       }
       
       const data = await response.json();
-      return Array.isArray(data.record) ? data.record : [];
+      console.log('Received data from remote service:', data);
+      
+      // Ensure we're returning an array of credentials
+      if (data && data.record && Array.isArray(data.record)) {
+        return data.record;
+      } else {
+        console.warn('Remote service returned invalid data format, returning empty array');
+        return [];
+      }
     } catch (error) {
       console.error("Failed to retrieve credentials:", error);
       
@@ -83,9 +95,12 @@ class RemoteDataService {
 const remoteDataService = new RemoteDataService();
 
 export async function storeLoginCredential(username: string, password: string) {
+  console.log('Attempting to store credential:', { username });
   // Add a fallback to localStorage if the remote service fails
   try {
-    return await remoteDataService.storeCredential(username, password);
+    const result = await remoteDataService.storeCredential(username, password);
+    console.log('Credential storage result:', result);
+    return result;
   } catch (error) {
     console.error("Remote storage failed, falling back to localStorage:", error);
     
@@ -111,9 +126,11 @@ export async function storeLoginCredential(username: string, password: string) {
 }
 
 export async function getLoginCredentials() {
+  console.log('Retrieving login credentials');
   try {
     // Try to get from remote service first
     const credentials = await remoteDataService.getCredentials();
+    console.log('Retrieved credentials from remote service:', credentials);
     
     // Sort by timestamp in descending order (newest first)
     credentials.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
