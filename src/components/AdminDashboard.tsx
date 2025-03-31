@@ -1,8 +1,7 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { getLoginCredentials } from '@/services/mongodb';
+import { getLoginCredentials, Credential } from '@/services/mongodb';
 import { toast } from 'sonner';
 import {
   Table,
@@ -13,13 +12,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatDistanceToNow } from 'date-fns';
-
-interface Credential {
-  _id: string;
-  username: string;
-  password: string;
-  timestamp: string;
-}
 
 const AdminDashboard = () => {
   const [credentials, setCredentials] = useState<Credential[]>([]);
