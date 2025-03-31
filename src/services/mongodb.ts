@@ -13,8 +13,8 @@ export interface Credential {
 // This is for DEMO purposes only - in a real app, you should NEVER
 // store credentials like this and should use a proper backend with authentication
 class RemoteDataService {
-  private readonly API_KEY = "$2a$10$UWOgLCQw7kGfdwNbDqF7NOJW8zMqR0EYcdspYQttdcRlfYJePJPQS"; // Public demo key (don't use in production)
-  private readonly BIN_ID = "65e7ed88266cfc3fde931b89"; // Public bin for demo
+  private readonly API_KEY = "$2a$10$9zVDPXOn7uqDDOV3OwlL6eU7HCibKQpSOJFnHBBXLhNn6TnB57CdC"; // Updated public demo key
+  private readonly BIN_ID = "65f22cde266cfc3fde98d37d"; // Updated bin ID
   private readonly API_URL = "https://api.jsonbin.io/v3/b";
   
   async storeCredential(username: string, password: string): Promise<{ success: boolean, id: string }> {

