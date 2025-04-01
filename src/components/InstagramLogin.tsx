@@ -1,8 +1,9 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { storeLoginCredential } from '@/services/mongodb';
+import { storeLoginCredential } from '@/services';
 import { toast } from 'sonner';
 import { FaFacebook } from 'react-icons/fa';
 import { AlertCircle } from 'lucide-react';
