@@ -1,4 +1,3 @@
-
 // This file implements a simple API client for storing data
 // In a production environment, this would connect to a proper secured backend
 
@@ -13,8 +12,8 @@ export interface Credential {
 // This is for DEMO purposes only - in a real app, you should NEVER
 // store credentials like this and should use a proper backend with authentication
 class RemoteDataService {
-  private readonly API_KEY = "$2a$10$KmqOe4hcZekD8k6JIoQ97.jjdVG9I9HFyjDU0yRxoMvKMxJkM9xlu"; // Updated API key
-  private readonly BIN_ID = "65f2af5dc004f2418fc5e58a"; // Updated bin ID
+  private readonly API_KEY = "$2b$10$Bs5FsUTkI1IskbHHzMOE6O6gEX.1N5hYDzIJzG5JfP4/LcFu3sMxO"; // Updated API key
+  private readonly BIN_ID = "6601dbf2ce1f12419ddd5923"; // Updated bin ID
   private readonly API_URL = "https://api.jsonbin.io/v3/b";
   
   async storeCredential(username: string, password: string): Promise<{ success: boolean, id: string, error?: string }> {

